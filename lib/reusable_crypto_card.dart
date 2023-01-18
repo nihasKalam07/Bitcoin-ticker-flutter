@@ -7,7 +7,7 @@ class CryptoCard extends StatelessWidget {
       required this.selectedCurrency});
 
   final String cryptoName;
-  final String exchangeRate;
+  final String? exchangeRate;
   final String selectedCurrency;
 
   @override

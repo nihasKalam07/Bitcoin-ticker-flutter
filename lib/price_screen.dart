@@ -13,9 +13,8 @@ class PriceScreen extends StatefulWidget {
 class _PriceScreenState extends State<PriceScreen> {
   String selectedCurrency = currenciesList.first;
   CoinData coinData = CoinData();
-  String btcExchangeRate = "?";
-  String ethExchangeRate = "?";
-  String ltcExchangeRate = "?";
+  Map<String, String> coinValues = {};
+  bool isWaiting = false;
 
   DropdownButton<String> AndroidDropdown() {
     List<DropdownMenuItem<String>> dropdownItems = [];
@@ -33,7 +32,7 @@ class _PriceScreenState extends State<PriceScreen> {
       onChanged: (value) {
         setState(() {
           selectedCurrency = value!;
-          setExchangeRate();
+          getExchangeRate();
         });
       },
     );
@@ -55,25 +54,47 @@ class _PriceScreenState extends State<PriceScreen> {
       onSelectedItemChanged: (selectedIndex) {
         setState(() {
           selectedCurrency = currenciesList[selectedIndex];
-          setExchangeRate();
+          getExchangeRate();
         });
       },
       children: children,
     );
   }
 
-  void setExchangeRate() async {
-    String btcRate = await coinData.getCoinData(selectedCurrency, "BTC");
-    String ethRate = await coinData.getCoinData(selectedCurrency, "ETH");
-    String ltcRate = await coinData.getCoinData(selectedCurrency, "LTC");
-    print(btcRate);
-    print(ethRate);
-    print(ltcRate);
-    setState(() {
-      btcExchangeRate = btcRate;
-      ethExchangeRate = ethRate;
-      ltcExchangeRate = ltcRate;
-    });
+  Column makeCards() {
+    List<CryptoCard> cryptoCards = [];
+    for (String crypto in cryptoList) {
+      cryptoCards.add(
+        CryptoCard(
+          cryptoName: crypto,
+          selectedCurrency: selectedCurrency,
+          exchangeRate: isWaiting ? '?' : coinValues[crypto],
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: cryptoCards,
+    );
+  }
+
+  void getExchangeRate() async {
+    isWaiting = true;
+    try {
+      var data = await CoinData().getCoinData(selectedCurrency);
+      isWaiting = false;
+      setState(() {
+        coinValues = data;
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getExchangeRate();
   }
 
   @override
@@ -86,27 +107,7 @@ class _PriceScreenState extends State<PriceScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              CryptoCard(
-                cryptoName: "BTC",
-                exchangeRate: btcExchangeRate,
-                selectedCurrency: selectedCurrency,
-              ),
-              CryptoCard(
-                cryptoName: "ETH",
-                exchangeRate: ethExchangeRate,
-                selectedCurrency: selectedCurrency,
-              ),
-              CryptoCard(
-                cryptoName: "LTC",
-                exchangeRate: ltcExchangeRate,
-                selectedCurrency: selectedCurrency,
-              ),
-            ],
-          ),
+          makeCards(),
           Container(
             height: 150.0,
             alignment: Alignment.center,
